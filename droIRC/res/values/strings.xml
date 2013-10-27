@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">droIRC</string>
+    <string name="action_settings">Settings</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="chatmsgshere">Messages here...</string>
+    <string name="entermsghere">Enter message here...</string>
+    <string name="title_activity_network">NetworkActivity</string>
+
+</resources>
