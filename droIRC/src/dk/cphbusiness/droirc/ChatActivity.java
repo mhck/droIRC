@@ -11,14 +11,15 @@ import java.net.UnknownHostException;
 import android.app.Activity;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 public class ChatActivity extends Activity {
 
-	private boolean connected = false;
 	private Socket socket;
 	private String server = "asimov.freenode.net";
 	private int port = 6667;
@@ -33,6 +34,8 @@ public class ChatActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
+		TextView textView = (TextView) findViewById(R.id.textView1);
+		textView.setMovementMethod(new ScrollingMovementMethod());
 		new ServerConnecter().execute("");
 	}
 
@@ -82,15 +85,26 @@ public class ChatActivity extends Activity {
 		try {			
 			EditText editText = (EditText) findViewById(R.id.editText1);
 			String message = editText.getText().toString();
+			if (message.equals("")) return; // if empty message don't write to server
 			write.write("PRIVMSG " + channelName + " :" + message + "\r\n");
 			TextView chatArea = (TextView) findViewById(R.id.textView1);
 			chatArea.append("<" + nickname + "> " + message + "\n");
 			editText.setText("");
+			scrollToBottom();
 			write.flush();
 		}
 		catch (IOException ioe) {
 			ioe.printStackTrace();
 		}
+	}
+	
+	private void scrollToBottom() {
+		final ScrollView scrollView = (ScrollView) findViewById(R.id.scrollView1);
+		scrollView.post(new Runnable() {
+			public void run() {
+				scrollView.smoothScrollTo(0, scrollView.getBottom());
+			}
+		});
 	}
 
 	@Override
@@ -159,6 +173,7 @@ public class ChatActivity extends Activity {
 						}
 						else { // Message from user
 							publishProgress(processLine(line));
+							scrollToBottom();
 						}
 					}
 				}
@@ -173,8 +188,6 @@ public class ChatActivity extends Activity {
 		protected void onProgressUpdate(String... values) {
 			super.onProgressUpdate(values);
 			TextView chatArea = (TextView) findViewById(R.id.textView1);
-			if (chatArea.getLineCount() > 20)
-				chatArea.setText("");
 			chatArea.append(values[0] + "\n");
 		}
 	}
