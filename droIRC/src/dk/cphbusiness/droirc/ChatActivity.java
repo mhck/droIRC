@@ -36,7 +36,7 @@ public class ChatActivity extends Activity {
 		setContentView(R.layout.activity_chat);
 		TextView textView = (TextView) findViewById(R.id.textView1);
 		textView.setMovementMethod(new ScrollingMovementMethod());
-		new ServerConnecter().execute("");
+		new ServerConnecter().execute(server, Integer.toString(port));
 	}
 
 	public boolean connect(String hostName, int port) {
@@ -85,13 +85,13 @@ public class ChatActivity extends Activity {
 		try {			
 			EditText editText = (EditText) findViewById(R.id.editText1);
 			String message = editText.getText().toString();
-			if (message.equals("")) return; // if empty message don't write to server
+			if (message.equals("")) return; // If message is an empty string don't write to server. Blocks onClick from sending empty lines when clicking EditText field
 			write.write("PRIVMSG " + channelName + " :" + message + "\r\n");
 			TextView chatArea = (TextView) findViewById(R.id.textView1);
 			chatArea.append("<" + nickname + "> " + message + "\n");
 			editText.setText("");
-			scrollToBottom();
 			write.flush();
+			scrollToBottom();
 		}
 		catch (IOException ioe) {
 			ioe.printStackTrace();
@@ -117,7 +117,7 @@ public class ChatActivity extends Activity {
 	private class ServerConnecter extends AsyncTask<String, String, Void> {		
 		@Override
 		protected Void doInBackground(String... params) {
-			connect(server, port);
+			connect(params[0], Integer.parseInt(params[1]));
 			joinChannel(channelName);
 			return null;
 		}
@@ -164,7 +164,6 @@ public class ChatActivity extends Activity {
 					if (line.startsWith("PING ")) {
 						// We must respond to PINGs to avoid being disconnected.
 						write.write("PONG " + line.substring(5) + "\r\n");
-						//write.write("PRIVMSG " + channel + " :I got pinged!\r\n");
 						write.flush();
 					}
 					else { // Print input received

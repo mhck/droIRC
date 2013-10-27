@@ -1,4 +1,4 @@
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:orientation="vertical"
     android:layout_width="match_parent"
@@ -12,7 +12,7 @@
 
         <ScrollView
             android:id="@+id/scrollView1"
-            android:layout_width="fill_parent"
+            android:layout_width="match_parent"
             android:layout_height="400dp"
             android:fillViewport="false" >
 
@@ -23,7 +23,6 @@
                 android:maxLines="@integer/thousand"
                 android:scrollbars="vertical"
                 android:text="@string/chatmsgshere" />
-
         </ScrollView>
 
     <EditText
@@ -33,7 +32,8 @@
         android:ems="10"
         android:hint="@string/entermsghere"
         android:inputType="text"
+        android:layout_below="@id/scrollView1"
         android:onClick="message" >
     </EditText>
 
-</LinearLayout>
+</RelativeLayout>
