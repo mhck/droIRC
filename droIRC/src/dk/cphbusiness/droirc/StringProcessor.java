@@ -4,6 +4,11 @@ public class StringProcessor {
 	public static String processLine(String line, String server, String nickname) {
 		int indexNickStart = 0, indexNickEnd = 0, indexMsgStart = 0;
 		boolean nickFound = false;
+		String regexServerMsg = ".*:[a-z.]+ [0-9]{3} " + nickname + " :-.*"; // regex to check if message from server
+		if (line.matches(regexServerMsg)) {
+			int startindex = line.indexOf(nickname) + nickname.length() + 3;
+			return line.substring(startindex);
+		}
 		if (line.indexOf(":" + server) >= 0) { // if server msg
 			int serverMsgLength = server.length() + nickname.length() + 8;
 			return line.substring(serverMsgLength);

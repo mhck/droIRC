@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.text.method.ScrollingMovementMethod;
@@ -17,14 +18,15 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class ChatActivity extends Activity {
 
+	private User user;
+	private String server;
+	private String servername;
 	private Socket socket;
-	private String server = "asimov.freenode.net";
 	private int port = 6667;
-	private String nickname = "Drobot";
-	private String user = "Drobot";
 	private String line;
 	private String channelName = "#droirc";
 	private BufferedWriter write;
@@ -33,9 +35,14 @@ public class ChatActivity extends Activity {
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		Intent intent = getIntent();
+		server = intent.getStringExtra("SERVERIP");
+		servername = intent.getStringExtra("SERVERNAME");
+		user = new User(0, intent.getStringExtra("NICKNAME"));
 		setContentView(R.layout.activity_chat);
 		TextView textView = (TextView) findViewById(R.id.textView1);
 		textView.setMovementMethod(new ScrollingMovementMethod());
+		Toast.makeText(this, "Connecting to " + servername, Toast.LENGTH_SHORT).show();
 		new ServerConnecter().execute(server, Integer.toString(port));
 	}
 
@@ -47,21 +54,21 @@ public class ChatActivity extends Activity {
 			read = new BufferedReader(new InputStreamReader(socket.getInputStream()));
 
 			// Log on to the server.
-			write.write("NICK " + nickname + "\r\n");
-			write.write("USER " + user + " 8 * : Droirc bot 0.1\r\n");
+			write.write("NICK " + user.getNickname() + "\r\n");
+			write.write("USER " + user.getUserid() + " 8 * : Droirc bot 0.1\r\n");
 			write.flush();
 
-			// Waiting for server to respond with 004 (logged in)
-			while ((line = read.readLine()) != null) {
-				System.out.println(line);
-				if (line.indexOf("004") >= 0) {
-					return true;
-				}
-				else if (line.indexOf("433") >= 0) {
-					System.out.println("Nickname is already in use.");
-					return false;
-				}
-			}
+//			// Waiting for server to respond with 004 (logged in)
+//			while ((line = read.readLine()) != null) {
+//				System.out.println(line);
+//				if (line.indexOf("004") >= 0) {
+//					return true;
+//				}
+//				else if (line.indexOf("433") >= 0) {
+//					System.out.println("Nickname is already in use.");
+//					return false;
+//				}
+//			}
 		} catch (UnknownHostException uhe) {
 			uhe.printStackTrace();
 		} catch (IOException ioe) {
@@ -88,7 +95,7 @@ public class ChatActivity extends Activity {
 			if (message.equals("")) return; // If message is an empty string don't write to server. Blocks onClick from sending empty lines when clicking EditText field
 			write.write("PRIVMSG " + channelName + " :" + message + "\r\n");
 			TextView chatArea = (TextView) findViewById(R.id.textView1);
-			chatArea.append("<" + nickname + "> " + message + "\n");
+			chatArea.append("<" + user.getNickname() + "> " + message + "\n");
 			editText.setText("");
 			write.flush();
 			scrollToBottom();
@@ -140,13 +147,14 @@ public class ChatActivity extends Activity {
 						write.flush();
 					}
 					else { // Print input received
-						if (line.indexOf(server) >= 0) { // Message from server
-							publishProgress(line);
-						}
-						else { // Message from user
-							publishProgress(StringProcessor.processLine(line, server, nickname));
-							scrollToBottom();
-						}
+//						if (line.indexOf(server) >= 0) { // Message from server
+//							publishProgress(line);
+//						}
+//						else { // Message from user
+//							publishProgress(StringProcessor.processLine(line, server, nickname));
+//							scrollToBottom();
+//						}
+						publishProgress(StringProcessor.processLine(line, server, user.getNickname()));
 					}
 				}
 			}
