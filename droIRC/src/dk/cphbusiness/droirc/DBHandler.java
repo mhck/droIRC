@@ -1,7 +1,5 @@
 package dk.cphbusiness.droirc;
 
-import java.util.List;
-
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -42,7 +40,6 @@ public class DBHandler extends SQLiteOpenHelper {
 	public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 		// Drop older tables
 		db.execSQL("DROP TABLE IF EXISTS " + TABLE_USERS);
-
 		// Create tables again
 		onCreate(db);
 	}
@@ -50,6 +47,7 @@ public class DBHandler extends SQLiteOpenHelper {
 	/*
 	 * DB operations below
 	 */
+	
 	// Add new user
 	public void addUser(User user) {
 		SQLiteDatabase db = this.getWritableDatabase();
@@ -94,7 +92,7 @@ public class DBHandler extends SQLiteOpenHelper {
 	
 	// Get number of users
     public int getUsersCount() {
-        String countQuery = "SELECT  * FROM " + TABLE_USERS;
+        String countQuery = "SELECT * FROM " + TABLE_USERS;
         SQLiteDatabase db = this.getReadableDatabase();
         Cursor cursor = db.rawQuery(countQuery, null);
         cursor.close();
