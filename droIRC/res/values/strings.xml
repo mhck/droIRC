@@ -7,5 +7,7 @@
     <string name="chatmsgshere">Messages here...</string>
     <string name="entermsghere">Enter message here...</string>
     <string name="title_activity_network">NetworkActivity</string>
-
+    <string name="title_activity_menu">MenuActivity</string>
+    <string name="menu_pic">Menu Picture</string>
+	<string name="nickname_label">Nickname:</string>
 </resources>
