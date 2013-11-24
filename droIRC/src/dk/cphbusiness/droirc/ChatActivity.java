@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.net.UnknownHostException;
 
 import android.app.Activity;
+import android.app.FragmentManager;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -20,7 +21,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class ChatActivity extends Activity {
+public class ChatActivity extends Activity implements ServerListenerFragment.TaskCallbacks {
 
 	private User user;
 	private String server;
@@ -31,19 +32,55 @@ public class ChatActivity extends Activity {
 	private String channelName = "#droirc";
 	private BufferedWriter write;
 	private BufferedReader read;
+	private ServerListenerFragment serverListenerFragment;
+	private FragmentManager serverListenerManager;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_chat);
+		
+		// Information from menu activity
 		Intent intent = getIntent();
 		server = intent.getStringExtra("SERVERIP");
 		servername = intent.getStringExtra("SERVERNAME");
 		user = new User(0, intent.getStringExtra("NICKNAME"));
-		setContentView(R.layout.activity_chat);
+		
+		// Fragment Manager (to interact with server listener)
+		serverListenerManager = getFragmentManager();
+		serverListenerFragment = (ServerListenerFragment) serverListenerManager.findFragmentByTag("listenertask");
+		
+		// If fragment is null, then it is not retained from conf. change
+		if (serverListenerFragment == null) {
+			serverListenerFragment = new ServerListenerFragment();
+			serverListenerManager.beginTransaction().add(serverListenerFragment, "listenertask").commit();
+		}
+		
 		TextView textView = (TextView) findViewById(R.id.textView1);
 		textView.setMovementMethod(new ScrollingMovementMethod());
 		Toast.makeText(this, "Connecting to " + servername, Toast.LENGTH_SHORT).show();
 		new ServerConnecter().execute(server, Integer.toString(port));
+	}
+	
+	@Override
+	public boolean onCreateOptionsMenu(Menu menu) {
+		// Inflate the menu; this adds items to the action bar if it is present.
+		getMenuInflater().inflate(R.menu.chat, menu);
+		return true;
+	}
+	
+	@Override
+	protected void onSaveInstanceState(Bundle outState) {
+		super.onSaveInstanceState(outState);
+		outState.putString("serverip", server);
+		outState.putString("nickname", user.getNickname());
+		
+	}
+	
+	@Override
+	public void onProgressUpdate(String... values) {
+		TextView chatArea = (TextView) findViewById(R.id.textView1);
+		chatArea.append(values[0] + "\n");
 	}
 
 	public boolean connect(String hostName, int port) {
@@ -114,13 +151,6 @@ public class ChatActivity extends Activity {
 		});
 	}
 
-	@Override
-	public boolean onCreateOptionsMenu(Menu menu) {
-		// Inflate the menu; this adds items to the action bar if it is present.
-		getMenuInflater().inflate(R.menu.chat, menu);
-		return true;
-	}
-
 	private class ServerConnecter extends AsyncTask<String, String, Void> {		
 		@Override
 		protected Void doInBackground(String... params) {
@@ -132,43 +162,47 @@ public class ChatActivity extends Activity {
 		@Override
 		protected void onPostExecute(Void result) {
 			//super.onPostExecute(result);
-			new ServerListener().execute("");
+			serverListenerManager.beginTransaction().commit();
 		}
 	}
-
-	private class ServerListener extends AsyncTask<String, String, Void> {
-		@Override
-		protected Void doInBackground(String... params) {
-			try {
-				while ((line = read.readLine()) != null) {
-					if (line.startsWith("PING ")) {
-						// We must respond to PINGs to avoid being disconnected.
-						write.write("PONG " + line.substring(5) + "\r\n");
-						write.flush();
-					}
-					else { // Print input received
-//						if (line.indexOf(server) >= 0) { // Message from server
-//							publishProgress(line);
-//						}
-//						else { // Message from user
-//							publishProgress(StringProcessor.processLine(line, server, nickname));
-//							scrollToBottom();
-//						}
-						publishProgress(StringProcessor.processLine(line, server, user.getNickname()));
-					}
-				}
-			}
-			catch (IOException ioe) {
-				ioe.printStackTrace();
-			}
-			return null;
-		}
-
-		@Override
-		protected void onProgressUpdate(String... values) {
-			super.onProgressUpdate(values);
-			TextView chatArea = (TextView) findViewById(R.id.textView1);
-			chatArea.append(values[0] + "\n");
-		}
+	
+	public User getUser() {
+		return user;
 	}
+
+	public BufferedWriter getWriter() {
+		return write;
+	}
+
+	public BufferedReader getReader() {
+		return read;
+	}
+	
+	public String getLine() {
+		return line;
+	}
+	
+	public void setLine(String line) {
+		this.line = line;
+	}
+	
+	public String getServerIp() {
+		return server;
+	}
+
+	@Override
+	public void onPreExecute() {
+
+	}
+
+	@Override
+	public void onCancelled() {
+
+	}
+
+	@Override
+	public void onPostExecute() {
+	
+	}
+	
 }
