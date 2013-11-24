@@ -34,32 +34,46 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 	private BufferedReader read;
 	private ServerListenerFragment serverListenerFragment;
 	private FragmentManager serverListenerManager;
+	private boolean resumed = true;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
 		
-		// Information from menu activity
+		// Information from startmenu activity
 		Intent intent = getIntent();
 		server = intent.getStringExtra("SERVERIP");
 		servername = intent.getStringExtra("SERVERNAME");
 		user = new User(0, intent.getStringExtra("NICKNAME"));
 		
+		// Saves user to DB
+		DBHandler db = new DBHandler(this);
+		User userFromDb = db.getUser(user.getNickname());
+		if (userFromDb.getNickname() != user.getNickname()) // If user doesn't exist in DB
+			db.addUser(user); // Add user to db
+		
 		// Fragment Manager (to interact with server listener)
 		serverListenerManager = getFragmentManager();
 		serverListenerFragment = (ServerListenerFragment) serverListenerManager.findFragmentByTag("listenertask");
 		
-		// If fragment is null, then it is not retained from conf. change
+		// If fragment is null create new
 		if (serverListenerFragment == null) {
+			resumed = false;
 			serverListenerFragment = new ServerListenerFragment();
 			serverListenerManager.beginTransaction().add(serverListenerFragment, "listenertask").commit();
 		}
 		
+		if (!resumed) { // Only connect if new instance
+			Toast.makeText(this, "Connecting to " + servername, Toast.LENGTH_SHORT).show();
+			new ServerConnecter().execute(server, Integer.toString(port));
+		}
+		else {
+			serverListenerManager.beginTransaction().commit();
+		}
+		
 		TextView textView = (TextView) findViewById(R.id.textView1);
 		textView.setMovementMethod(new ScrollingMovementMethod());
-		Toast.makeText(this, "Connecting to " + servername, Toast.LENGTH_SHORT).show();
-		new ServerConnecter().execute(server, Integer.toString(port));
 	}
 	
 	@Override
@@ -161,7 +175,7 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 
 		@Override
 		protected void onPostExecute(Void result) {
-			//super.onPostExecute(result);
+			super.onPostExecute(result);
 			serverListenerManager.beginTransaction().commit();
 		}
 	}

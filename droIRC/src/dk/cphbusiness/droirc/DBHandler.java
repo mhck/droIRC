@@ -13,7 +13,7 @@ public class DBHandler extends SQLiteOpenHelper {
 
 	// Tables
 	private static final String TABLE_USERS = "users";
-
+	
 	// Columns
 	private static final String KEY_ID = "id";
 	private static final String KEY_NICKNAME = "nickname";
@@ -57,13 +57,12 @@ public class DBHandler extends SQLiteOpenHelper {
 		db.close();
 	}
 
-	// Getting user from ID
-	public User getUser(int id) {
+	// Getting user through nickname
+	public User getUser(String nickname) {
 		SQLiteDatabase db = this.getReadableDatabase();
 
-		Cursor cursor = db.query(TABLE_USERS, new String[] { KEY_ID,
-				KEY_NICKNAME }, KEY_ID + "=?",
-				new String[] { String.valueOf(id) }, null, null, null, null);
+		Cursor cursor = db.query(TABLE_USERS, new String[] { KEY_ID, KEY_NICKNAME }, KEY_NICKNAME + "=?",
+				new String[] { nickname }, null, null, null, null);
 		if (cursor != null)
 			cursor.moveToFirst();
 

@@ -11,7 +11,7 @@ public class User {
 	public User(int id, String name) {
 		this.id = id;
 		this.nickname = name;
-		userid = "Drobot";
+		userid = "droIRC";
 	}
 
 	public int getId() {
