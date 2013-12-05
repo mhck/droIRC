@@ -55,7 +55,7 @@ public class MenuActivity extends Activity {
 			    intent.putExtra("NICKNAME", nickname);
 			    startActivity(intent);
 			  }
-			}); 
+			});
 	}
 
 	@Override

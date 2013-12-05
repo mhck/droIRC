@@ -52,21 +52,45 @@ public class DBHandler extends SQLiteOpenHelper {
 	public void addUser(User user) {
 		SQLiteDatabase db = this.getWritableDatabase();
 		ContentValues cValues = new ContentValues();
+		cValues.put(KEY_ID, user.getId());
 		cValues.put(KEY_NICKNAME, user.getNickname());
 		db.insert(TABLE_USERS, null, cValues); // inserting Row
 		db.close();
 	}
 
+	// Getting user through ID
+	public User getUser(int id) {
+		SQLiteDatabase db = this.getReadableDatabase();
+		User user = null;
+		Cursor cursor = db.query(TABLE_USERS, new String[] { KEY_ID, KEY_NICKNAME }, KEY_ID + "=?",
+				new String[] { Integer.toString(id) }, null, null, null, null);
+		if (cursor != null) {
+			cursor.moveToFirst();
+			System.err.println("Received cursor....");
+			System.err.println("Number of coloumns: " + cursor.getColumnCount());
+			System.err.println("Number of rows: " + cursor.getCount());
+		}
+		if (cursor.getCount() > 0)
+			user = new User(Integer.parseInt(cursor.getString(0)), cursor.getString(1));
+		return user;
+	}
+	
+	
 	// Getting user through nickname
 	public User getUser(String nickname) {
 		SQLiteDatabase db = this.getReadableDatabase();
-
+		User user = null;
 		Cursor cursor = db.query(TABLE_USERS, new String[] { KEY_ID, KEY_NICKNAME }, KEY_NICKNAME + "=?",
 				new String[] { nickname }, null, null, null, null);
-		if (cursor != null)
+		if (cursor != null) {
 			cursor.moveToFirst();
-
-		User user = new User(Integer.parseInt(cursor.getString(0)), cursor.getString(1));
+			System.err.println("Received cursor....");
+			System.err.println("Number of coloumns: " + cursor.getColumnCount());
+			System.err.println("Number of rows: " + cursor.getCount());
+		}
+		if (cursor.getCount() > 0)
+			user = new User(Integer.parseInt(cursor.getString(0)), cursor.getString(1));
+		
 		return user;
 	}
 

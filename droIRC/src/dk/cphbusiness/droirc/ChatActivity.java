@@ -7,7 +7,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
-
+import java.util.ArrayList;
 import android.app.Activity;
 import android.app.FragmentManager;
 import android.content.Intent;
@@ -28,30 +28,48 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 	private String servername;
 	private Socket socket;
 	private int port = 6667;
+	private ArrayList<String> channels;
 	private String line;
 	private String channelName = "#droirc";
 	private BufferedWriter write;
 	private BufferedReader read;
 	private ServerListenerFragment serverListenerFragment;
 	private FragmentManager serverListenerManager;
-	private boolean resumed = true;
+	private boolean resumed = true;	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
 		
+		// Test channels to show
+		channels = new ArrayList<String>();
+		channels.add("#droirc");
+		channels.add("#linux");
+		channels.add("#linux.dk");
+		channels.add("#c++");
+		channels.add("#android-dev");
+		
 		// Information from startmenu activity
 		Intent intent = getIntent();
 		server = intent.getStringExtra("SERVERIP");
 		servername = intent.getStringExtra("SERVERNAME");
 		user = new User(0, intent.getStringExtra("NICKNAME"));
-		
+				
 		// Saves user to DB
 		DBHandler db = new DBHandler(this);
-		User userFromDb = db.getUser(user.getNickname());
-		if (userFromDb.getNickname() != user.getNickname()) // If user doesn't exist in DB
-			db.addUser(user); // Add user to db
+		User userFromDb = db.getUser(0);
+		if (userFromDb != null) {
+			System.err.println("Getting user (ID 0) from DB...");
+			System.err.println("User loaded from from DB: " + userFromDb.getNickname());
+		}
+		else {
+			System.err.println("User not found in DB... Adding current user...");
+			db.addUser(user);
+			System.err.println("User " + user.getNickname() + " added to DB...");
+			System.err.println("Testing to see if user exists in DB: ");
+			System.err.println("Loaded ID 0: " + db.getUser(0).getNickname());
+		}
 		
 		// Fragment Manager (to interact with server listener)
 		serverListenerManager = getFragmentManager();
@@ -64,7 +82,8 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 			serverListenerManager.beginTransaction().add(serverListenerFragment, "listenertask").commit();
 		}
 		
-		if (!resumed) { // Only connect if new instance
+		
+		if (!resumed) { // Only connect if new instance of program
 			Toast.makeText(this, "Connecting to " + servername, Toast.LENGTH_SHORT).show();
 			new ServerConnecter().execute(server, Integer.toString(port));
 		}
@@ -132,6 +151,7 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 		try {
 			write.write("JOIN " + channelName + "\r\n");
 			write.flush( );
+			channels.add(channelName);
 		}
 		catch (IOException e) {
 			System.out.println("Error joining channel");
@@ -144,11 +164,16 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 			EditText editText = (EditText) findViewById(R.id.editText1);
 			String message = editText.getText().toString();
 			if (message.equals("")) return; // If message is an empty string don't write to server. Blocks onClick from sending empty lines when clicking EditText field
-			write.write("PRIVMSG " + channelName + " :" + message + "\r\n");
-			TextView chatArea = (TextView) findViewById(R.id.textView1);
-			chatArea.append("<" + user.getNickname() + "> " + message + "\n");
-			editText.setText("");
-			write.flush();
+			if (message.length() > 7 && message.substring(0, 5).equalsIgnoreCase("/join")) { // check if user writes /join
+				joinChannel(message.substring(6));
+			}
+			else {
+				write.write("PRIVMSG " + channelName + " :" + message + "\r\n");
+				TextView chatArea = (TextView) findViewById(R.id.textView1);
+				chatArea.append("<" + user.getNickname() + "> " + message + "\n");
+				editText.setText("");
+				write.flush();
+			} 
 			scrollToBottom();
 		}
 		catch (IOException ioe) {
