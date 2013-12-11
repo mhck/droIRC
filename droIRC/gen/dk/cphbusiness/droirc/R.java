@@ -25,14 +25,12 @@ public final class R {
         public static final int menupic=0x7f020001;
     }
     public static final class id {
-        public static final int action_settings=0x7f090007;
-        public static final int drawer_layout=0x7f090000;
-        public static final int editText1=0x7f090004;
-        public static final int imageView1=0x7f090005;
-        public static final int left_drawer=0x7f090003;
-        public static final int listView1=0x7f090006;
-        public static final int scrollView1=0x7f090001;
-        public static final int textView1=0x7f090002;
+        public static final int action_settings=0x7f090005;
+        public static final int editText1=0x7f090002;
+        public static final int imageView1=0x7f090003;
+        public static final int listView1=0x7f090004;
+        public static final int scrollView1=0x7f090000;
+        public static final int textView1=0x7f090001;
     }
     public static final class integer {
         public static final int fifty=0x7f050001;
@@ -51,15 +49,14 @@ public final class R {
     public static final class string {
         public static final int action_settings=0x7f060001;
         public static final int app_name=0x7f060000;
-        public static final int chatmsgshere=0x7f060003;
+        public static final int empty=0x7f060003;
         public static final int entermsghere=0x7f060004;
         public static final int hello_world=0x7f060002;
         /**  APP TITLE 
          */
-        public static final int menu_pic=0x7f060007;
-        public static final int nickname_label=0x7f060008;
-        public static final int title_activity_menu=0x7f060006;
-        public static final int title_activity_network=0x7f060005;
+        public static final int menu_pic=0x7f060006;
+        public static final int nickname_label=0x7f060007;
+        public static final int title_activity_menu=0x7f060005;
     }
     public static final class style {
         /** 

@@ -8,11 +8,12 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import android.app.Activity;
+
 import android.app.FragmentManager;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.support.v4.app.FragmentActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
 import android.view.View;
@@ -21,40 +22,48 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-public class ChatActivity extends Activity implements ServerListenerFragment.TaskCallbacks {
+public class ChatActivity extends FragmentActivity implements ServerListenerFragment.TaskCallbacks {
 
 	private User user;
-	private String server;
+	private String serverip;
 	private String servername;
 	private Socket socket;
 	private int port = 6667;
-	private ArrayList<String> channels;
 	private String line;
-	private String channelName = "#droirc";
+	private String channelName;
 	private BufferedWriter write;
 	private BufferedReader read;
 	private ServerListenerFragment serverListenerFragment;
 	private FragmentManager serverListenerManager;
-	private boolean resumed = true;	
+	private boolean resumed = true;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
 		
-		// Test channels to show
-		channels = new ArrayList<String>();
-		channels.add("#droirc");
-		channels.add("#linux");
-		channels.add("#linux.dk");
-		channels.add("#c++");
-		channels.add("#android-dev");
+		final SaveConfiguration save = (SaveConfiguration) getLastCustomNonConfigurationInstance();
+		if (save == null) {
+			// Information from startmenu activity
+			Intent intent = getIntent();
+			serverip = intent.getStringExtra("SERVERIP");
+			servername = intent.getStringExtra("SERVERNAME");
+			user = new User(0, intent.getStringExtra("NICKNAME"));
+		}
+		else { // String hostName, String chatText, String channelName, User user, BufferedWriter write, BufferedReader read, Socket socket
+			System.err.println("Loading information from SaveConfiguration..");
+			TextView textViewChat = (TextView) findViewById(R.id.textView1);
+			textViewChat.setText(save.getChatText());
+			serverip = save.getHostName();
+			channelName = save.getChannelName();
+			user = save.getUser();
+			write = save.getWrite();
+			read = save.getRead();
+			socket = save.getSocket();
+			System.err.println("SaveConfiguration loaded succesfully..");
+		}
 		
-		// Information from startmenu activity
-		Intent intent = getIntent();
-		server = intent.getStringExtra("SERVERIP");
-		servername = intent.getStringExtra("SERVERNAME");
-		user = new User(0, intent.getStringExtra("NICKNAME"));
+
 				
 		// Saves user to DB
 		DBHandler db = new DBHandler(this);
@@ -85,14 +94,23 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 		
 		if (!resumed) { // Only connect if new instance of program
 			Toast.makeText(this, "Connecting to " + servername, Toast.LENGTH_SHORT).show();
-			new ServerConnecter().execute(server, Integer.toString(port));
+			new ServerConnecter().execute(serverip, Integer.toString(port));
 		}
 		else {
 			serverListenerManager.beginTransaction().commit();
 		}
 		
+		// Attach scroll to textview
 		TextView textView = (TextView) findViewById(R.id.textView1);
 		textView.setMovementMethod(new ScrollingMovementMethod());
+	}
+	
+	@Override
+	public Object onRetainCustomNonConfigurationInstance() {
+		TextView textViewChat = (TextView) findViewById(R.id.textView1);
+		String chatText = textViewChat.getText().toString();
+		final SaveConfiguration save = new SaveConfiguration(serverip, chatText, channelName, user, write, read, socket);
+		return save;
 	}
 	
 	@Override
@@ -105,9 +123,8 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
-		outState.putString("serverip", server);
-		outState.putString("nickname", user.getNickname());
-		
+//		outState.putString("serverip", server);
+//		outState.putString("nickname", user.getNickname());
 	}
 	
 	@Override
@@ -151,7 +168,6 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 		try {
 			write.write("JOIN " + channelName + "\r\n");
 			write.flush( );
-			channels.add(channelName);
 		}
 		catch (IOException e) {
 			System.out.println("Error joining channel");
@@ -165,7 +181,10 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 			String message = editText.getText().toString();
 			if (message.equals("")) return; // If message is an empty string don't write to server. Blocks onClick from sending empty lines when clicking EditText field
 			if (message.length() > 7 && message.substring(0, 5).equalsIgnoreCase("/join")) { // check if user writes /join
-				joinChannel(message.substring(6));
+				String channel = message.substring(6);
+				joinChannel(channel);
+				TextView chatArea = (TextView) findViewById(R.id.textView1);
+				chatArea.append("Joined channel " + channel + "\n");
 			}
 			else {
 				write.write("PRIVMSG " + channelName + " :" + message + "\r\n");
@@ -185,7 +204,7 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 		final ScrollView scrollView = (ScrollView) findViewById(R.id.scrollView1);
 		scrollView.post(new Runnable() {
 			public void run() {
-				scrollView.smoothScrollTo(0, scrollView.getBottom());
+				scrollView.fullScroll(View.FOCUS_DOWN);
 			}
 		});
 	}
@@ -226,7 +245,7 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 	}
 	
 	public String getServerIp() {
-		return server;
+		return serverip;
 	}
 
 	@Override
@@ -243,5 +262,30 @@ public class ChatActivity extends Activity implements ServerListenerFragment.Tas
 	public void onPostExecute() {
 	
 	}
+	
+//	private class DrawerItemClickListener implements OnItemClickListener {
+//	@Override
+//	public void onItemClick(AdapterView<?> parent, View view, int pos, long id) {
+//		selectItem(pos);
+//	}
+//	
+//	private void selectItem(int pos) {
+		// Create new fragment and specify the channel to show based on pos
+//		Fragment fragment = new ServerListenerFragment();
+//		Bundle args = new Bundle();
+//		args.putInt("test", pos);
+//		fragment.setArguments(args);
+//		
+//		// Insert fragment by replacing any existing fragment
+//		FragmentManager fManager = getFragmentManager();
+//		fManager.beginTransaction().replace(R.id.content_frame, fragment).commit();
+//		
+//		// Highlight the selected item, update the title, and close the drawer
+//	    drawerList.setItemChecked(pos, true);
+//		setTitle(mPlanetTitles[position]);
+//	    drawerLayout.closeDrawer(drawerList);
+//	}
+//
+//}
 	
 }
