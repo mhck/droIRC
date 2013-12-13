@@ -46,14 +46,6 @@ public class MenuActivity extends Activity {
 			System.err.println("User loaded from from DB: " + userFromDB.getNickname());
 			editTextName.setText(userFromDB.getNickname());
 		}
-//		else {
-//			System.err.println("User not found in DB... Adding current user...");
-//			db.addUser(user);
-//			System.err.println("User " + user.getNickname() + " added to DB...");
-//			System.err.println("Testing to see if user exists in DB: ");
-//			System.err.println("Loaded ID 0: " + db.getUser(0).getNickname());
-//		}
-		//db.close(); // Close the DB connection
 		
 		populateServerlist();
 		ArrayList<String> list = new ArrayList<String>();

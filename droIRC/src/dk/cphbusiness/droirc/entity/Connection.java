@@ -129,6 +129,20 @@ public class Connection {
 	public Socket getSocket() {
 		return socket;
 	}
+
+	public void disconnect() {
+		try {
+			write.write("DISCONNECT");
+			socket.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		connected = false;
+		channels = null;
+		hostName = null;
+		write = null;
+		read = null;
+	}
 }
 
 

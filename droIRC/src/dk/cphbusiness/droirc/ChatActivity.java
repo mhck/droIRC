@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.text.method.ScrollingMovementMethod;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ScrollView;
@@ -99,6 +100,19 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 	}
 	
 	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    switch (item.getItemId()) {
+        case R.id.action_disconnect:
+            connection.disconnect();
+            Intent intent = new Intent(this, ChatActivity.class);
+            startActivity(intent);
+            return true;
+        default:
+            return super.onOptionsItemSelected(item);
+	    }
+	}
+	
+	@Override
 	protected void onSaveInstanceState(Bundle outState) {
 		super.onSaveInstanceState(outState);
 //		outState.putString("serverip", server);
@@ -109,50 +123,8 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 	public void onProgressUpdate(String... values) {
 		TextView chatArea = (TextView) findViewById(R.id.textView1);
 		chatArea.append(values[0] + "\n");
+		scrollToBottom();
 	}
-
-//	public boolean connect(String hostName, int port) {
-//		try {
-//			// Initializing connection and streams
-//			socket = new Socket(hostName, port);
-//			write = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-//			read = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//
-//			// Log on to the server.
-//			write.write("NICK " + user.getNickname() + "\r\n");
-//			write.write("USER " + user.getUserid() + " 8 * : Droirc bot 0.1\r\n");
-//			write.flush();
-//
-////			// Waiting for server to respond with 004 (logged in)
-////			while ((line = read.readLine()) != null) {
-////				System.out.println(line);
-////				if (line.indexOf("004") >= 0) {
-////					return true;
-////				}
-////				else if (line.indexOf("433") >= 0) {
-////					System.out.println("Nickname is already in use.");
-////					return false;
-////				}
-////			}
-//		} catch (UnknownHostException uhe) {
-//			uhe.printStackTrace();
-//		} catch (IOException ioe) {
-//			ioe.printStackTrace();
-//		}
-//		return false;
-//	}
-
-//	public void joinChannel(String channelName) {
-//		try {
-//			this.channelName = channelName;
-//			write.write("JOIN " + channelName + "\r\n");
-//			write.flush( );
-//		}
-//		catch (IOException e) {
-//			System.out.println("Error joining channel");
-//			e.printStackTrace();
-//		}
-//	}
 
 	public void message(View view) {
 		try {			
@@ -171,7 +143,6 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 				TextView chatArea = (TextView) findViewById(R.id.textView1);
 				if (connection.getChannels().size() == 0)
 					chatArea.append("You need to join a channel before chatting!");
-				System.err.println("Size of channellist is: " + connection.getChannels().size());
 				connection.getWriter().write("PRIVMSG " + connection.getChannels().get(0) + " :" + message + "\r\n");
 				chatArea.append("<" + connection.getUser().getNickname() + "> " + message + "\n");
 				editText.setText("");
@@ -216,7 +187,7 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 
 	@Override
 	public void onPreExecute() {
-		// lol
+
 	}
 
 	@Override
