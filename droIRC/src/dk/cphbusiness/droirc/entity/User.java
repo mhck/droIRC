@@ -1,4 +1,4 @@
-package dk.cphbusiness.droirc;
+package dk.cphbusiness.droirc.entity;
 
 public class User {
 

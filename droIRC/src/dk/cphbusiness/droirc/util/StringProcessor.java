@@ -1,12 +1,11 @@
-package dk.cphbusiness.droirc;
+package dk.cphbusiness.droirc.util;
 
 
 public class StringProcessor {
 	public static String processLine(String line, String server, String nickname) {
-		/*
+		
 		System.err.println("Processing line: \n" + line);
-		System.err.println("------------------");
-		*/
+				
 		int indexNickStart = 0, indexNickEnd = 0, indexMsgStart = 0;
 		boolean nickFound = false;
 		String regexServerMsg = ".*:[a-z.]+ [0-9]{3} " + nickname + " :-.*"; // regex to check if message from server
@@ -37,6 +36,9 @@ public class StringProcessor {
 				break;
 			}
 		}
+		System.err.println("indexNickStart: " + indexNickStart);
+		System.err.println("indexNickEnd: " + indexNickEnd);
+		System.err.println("indexMsgStart: " + indexMsgStart);
 		return "<" + line.substring(indexNickStart, indexNickEnd) + "> " + line.substring(indexMsgStart);
 	}
 }

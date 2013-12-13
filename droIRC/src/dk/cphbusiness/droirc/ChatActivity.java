@@ -1,13 +1,10 @@
 package dk.cphbusiness.droirc;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.net.Socket;
-import java.net.UnknownHostException;
-import java.util.ArrayList;
+
+import dk.cphbusiness.droirc.entity.Connection;
+import dk.cphbusiness.droirc.entity.User;
+import dk.cphbusiness.droirc.util.SaveConfiguration;
 
 import android.app.FragmentManager;
 import android.content.Intent;
@@ -24,15 +21,7 @@ import android.widget.Toast;
 
 public class ChatActivity extends FragmentActivity implements ServerListenerFragment.TaskCallbacks {
 
-	private User user;
-	private String serverip;
-	private String servername;
-	private Socket socket;
-	private int port = 6667;
-	private String line;
-	private String channelName;
-	private BufferedWriter write;
-	private BufferedReader read;
+	private Connection connection;
 	private ServerListenerFragment serverListenerFragment;
 	private FragmentManager serverListenerManager;
 	private boolean resumed = true;
@@ -41,6 +30,10 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_chat);
+		
+		// Local variables used for ServerConnecter
+		String serverip = null, servername = null; 
+		User user;
 		
 		final SaveConfiguration save = (SaveConfiguration) getLastCustomNonConfigurationInstance();
 		if (save == null) {
@@ -54,32 +47,15 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 			System.err.println("Loading information from SaveConfiguration..");
 			TextView textViewChat = (TextView) findViewById(R.id.textView1);
 			textViewChat.setText(save.getChatText());
-			serverip = save.getHostName();
-			channelName = save.getChannelName();
+			serverip = save.getConnection().getHostName();
 			user = save.getUser();
-			write = save.getWrite();
-			read = save.getRead();
-			socket = save.getSocket();
+			connection = save.getConnection();
+			connection.setWrite(save.getConnection().getWriter());
+			connection.setRead(save.getConnection().getReader());
+			connection.setSocket(save.getConnection().getSocket());
 			System.err.println("SaveConfiguration loaded succesfully..");
 		}
-		
-
-				
-		// Saves user to DB
-		DBHandler db = new DBHandler(this);
-		User userFromDb = db.getUser(0);
-		if (userFromDb != null) {
-			System.err.println("Getting user (ID 0) from DB...");
-			System.err.println("User loaded from from DB: " + userFromDb.getNickname());
-		}
-		else {
-			System.err.println("User not found in DB... Adding current user...");
-			db.addUser(user);
-			System.err.println("User " + user.getNickname() + " added to DB...");
-			System.err.println("Testing to see if user exists in DB: ");
-			System.err.println("Loaded ID 0: " + db.getUser(0).getNickname());
-		}
-		
+							
 		// Fragment Manager (to interact with server listener)
 		serverListenerManager = getFragmentManager();
 		serverListenerFragment = (ServerListenerFragment) serverListenerManager.findFragmentByTag("listenertask");
@@ -94,7 +70,9 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 		
 		if (!resumed) { // Only connect if new instance of program
 			Toast.makeText(this, "Connecting to " + servername, Toast.LENGTH_SHORT).show();
-			new ServerConnecter().execute(serverip, Integer.toString(port));
+			String[] serverInfo = { serverip, String.valueOf(6667), user.getNickname() };
+			new ServerConnecter().execute(serverInfo);
+			//new ServerConnecter().execute(serverip, Integer.toString(port));
 		}
 		else {
 			serverListenerManager.beginTransaction().commit();
@@ -109,7 +87,7 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 	public Object onRetainCustomNonConfigurationInstance() {
 		TextView textViewChat = (TextView) findViewById(R.id.textView1);
 		String chatText = textViewChat.getText().toString();
-		final SaveConfiguration save = new SaveConfiguration(serverip, chatText, channelName, user, write, read, socket);
+		final SaveConfiguration save = new SaveConfiguration(connection, chatText, connection.getUser());
 		return save;
 	}
 	
@@ -133,47 +111,48 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 		chatArea.append(values[0] + "\n");
 	}
 
-	public boolean connect(String hostName, int port) {
-		try {
-			// Initializing connection and streams
-			socket = new Socket(hostName, port);
-			write = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
-			read = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//	public boolean connect(String hostName, int port) {
+//		try {
+//			// Initializing connection and streams
+//			socket = new Socket(hostName, port);
+//			write = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+//			read = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+//
+//			// Log on to the server.
+//			write.write("NICK " + user.getNickname() + "\r\n");
+//			write.write("USER " + user.getUserid() + " 8 * : Droirc bot 0.1\r\n");
+//			write.flush();
+//
+////			// Waiting for server to respond with 004 (logged in)
+////			while ((line = read.readLine()) != null) {
+////				System.out.println(line);
+////				if (line.indexOf("004") >= 0) {
+////					return true;
+////				}
+////				else if (line.indexOf("433") >= 0) {
+////					System.out.println("Nickname is already in use.");
+////					return false;
+////				}
+////			}
+//		} catch (UnknownHostException uhe) {
+//			uhe.printStackTrace();
+//		} catch (IOException ioe) {
+//			ioe.printStackTrace();
+//		}
+//		return false;
+//	}
 
-			// Log on to the server.
-			write.write("NICK " + user.getNickname() + "\r\n");
-			write.write("USER " + user.getUserid() + " 8 * : Droirc bot 0.1\r\n");
-			write.flush();
-
-//			// Waiting for server to respond with 004 (logged in)
-//			while ((line = read.readLine()) != null) {
-//				System.out.println(line);
-//				if (line.indexOf("004") >= 0) {
-//					return true;
-//				}
-//				else if (line.indexOf("433") >= 0) {
-//					System.out.println("Nickname is already in use.");
-//					return false;
-//				}
-//			}
-		} catch (UnknownHostException uhe) {
-			uhe.printStackTrace();
-		} catch (IOException ioe) {
-			ioe.printStackTrace();
-		}
-		return false;
-	}
-
-	public void joinChannel(String channelName) {
-		try {
-			write.write("JOIN " + channelName + "\r\n");
-			write.flush( );
-		}
-		catch (IOException e) {
-			System.out.println("Error joining channel");
-			e.printStackTrace();
-		}
-	}
+//	public void joinChannel(String channelName) {
+//		try {
+//			this.channelName = channelName;
+//			write.write("JOIN " + channelName + "\r\n");
+//			write.flush( );
+//		}
+//		catch (IOException e) {
+//			System.out.println("Error joining channel");
+//			e.printStackTrace();
+//		}
+//	}
 
 	public void message(View view) {
 		try {			
@@ -182,16 +161,21 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 			if (message.equals("")) return; // If message is an empty string don't write to server. Blocks onClick from sending empty lines when clicking EditText field
 			if (message.length() > 7 && message.substring(0, 5).equalsIgnoreCase("/join")) { // check if user writes /join
 				String channel = message.substring(6);
-				joinChannel(channel);
+				connection.joinChannel(channel);
 				TextView chatArea = (TextView) findViewById(R.id.textView1);
 				chatArea.append("Joined channel " + channel + "\n");
+				editText.setText("");
+				connection.getWriter().flush();
 			}
 			else {
-				write.write("PRIVMSG " + channelName + " :" + message + "\r\n");
 				TextView chatArea = (TextView) findViewById(R.id.textView1);
-				chatArea.append("<" + user.getNickname() + "> " + message + "\n");
+				if (connection.getChannels().size() == 0)
+					chatArea.append("You need to join a channel before chatting!");
+				System.err.println("Size of channellist is: " + connection.getChannels().size());
+				connection.getWriter().write("PRIVMSG " + connection.getChannels().get(0) + " :" + message + "\r\n");
+				chatArea.append("<" + connection.getUser().getNickname() + "> " + message + "\n");
 				editText.setText("");
-				write.flush();
+				connection.getWriter().flush();
 			} 
 			scrollToBottom();
 		}
@@ -212,10 +196,16 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 	private class ServerConnecter extends AsyncTask<String, String, Void> {		
 		@Override
 		protected Void doInBackground(String... params) {
-			connect(params[0], Integer.parseInt(params[1]));
-			joinChannel(channelName);
+			//connect(params[0], Integer.parseInt(params[1]));
+			String hostName = params[0];
+			int port = Integer.parseInt(params[1]);
+			User user = new User(0, params[2]);
+			connection = new Connection(hostName, port, user);
+			connection.connect();
 			return null;
 		}
+		
+		
 
 		@Override
 		protected void onPostExecute(Void result) {
@@ -223,34 +213,10 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 			serverListenerManager.beginTransaction().commit();
 		}
 	}
-	
-	public User getUser() {
-		return user;
-	}
-
-	public BufferedWriter getWriter() {
-		return write;
-	}
-
-	public BufferedReader getReader() {
-		return read;
-	}
-	
-	public String getLine() {
-		return line;
-	}
-	
-	public void setLine(String line) {
-		this.line = line;
-	}
-	
-	public String getServerIp() {
-		return serverip;
-	}
 
 	@Override
 	public void onPreExecute() {
-
+		// lol
 	}
 
 	@Override
@@ -261,6 +227,10 @@ public class ChatActivity extends FragmentActivity implements ServerListenerFrag
 	@Override
 	public void onPostExecute() {
 	
+	}
+	
+	public Connection getConnection() {
+		return connection;
 	}
 	
 //	private class DrawerItemClickListener implements OnItemClickListener {

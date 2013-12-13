@@ -1,5 +1,6 @@
-package dk.cphbusiness.droirc;
+package dk.cphbusiness.droirc.datasource;
 
+import dk.cphbusiness.droirc.entity.User;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
@@ -85,24 +86,23 @@ public class DBHandler extends SQLiteOpenHelper {
 		if (cursor != null) {
 			cursor.moveToFirst();
 			System.err.println("Received cursor....");
-			System.err.println("Number of coloumns: " + cursor.getColumnCount());
-			System.err.println("Number of rows: " + cursor.getCount());
+			System.err.println("Number of users: " + cursor.getCount());
 		}
-		if (cursor.getCount() > 0)
+		if (cursor.getCount() != 0) // If DB not empty
 			user = new User(Integer.parseInt(cursor.getString(0)), cursor.getString(1));
 		
 		return user;
 	}
 
 	// Update user
-	public int updateUser(User user) {
+	public int updateUser(String nickname) {
 		SQLiteDatabase db = this.getWritableDatabase();
 
 		ContentValues cValues = new ContentValues();
-		cValues.put(KEY_NICKNAME, user.getNickname());
+		cValues.put(KEY_NICKNAME, nickname);
 
 		return db.update(TABLE_USERS, cValues, KEY_ID + " = ?",
-				new String[] { String.valueOf(user.getId()) });
+				new String[] { String.valueOf(0) }); // ID of user
 	}
 
 	// Delete user

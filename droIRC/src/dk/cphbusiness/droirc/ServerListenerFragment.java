@@ -2,6 +2,8 @@ package dk.cphbusiness.droirc;
 
 import java.io.IOException;
 
+import dk.cphbusiness.droirc.util.StringProcessor;
+
 import android.app.Activity;
 import android.app.Fragment;
 import android.os.AsyncTask;
@@ -85,17 +87,17 @@ public class ServerListenerFragment extends Fragment {
 		@Override
 		protected Void doInBackground(Void... ignore) {
 			try {
-				chat.setLine(chat.getReader().readLine()); // reads line
-				while (chat.getLine() != null) {
-					if (chat.getLine().startsWith("PING ")) {
+				chat.getConnection().setLine(chat.getConnection().getReader().readLine()); // reads line
+				while (chat.getConnection().getLine() != null) {
+					if (chat.getConnection().getLine().startsWith("PING ")) {
 						// We must respond to PINGs to avoid being disconnected.
-						chat.getWriter().write("PONG " + chat.getLine().substring(5) + "\r\n");
-						chat.getWriter().flush();
+						chat.getConnection().getWriter().write("PONG " + chat.getConnection().getLine().substring(5) + "\r\n");
+						chat.getConnection().getWriter().flush();
 					}
 					else {
-						publishProgress(StringProcessor.processLine(chat.getLine(), chat.getServerIp(), chat.getUser().getNickname()));
+						publishProgress(StringProcessor.processLine(chat.getConnection().getLine(), chat.getConnection().getHostName(), chat.getConnection().getUser().getNickname()));
 					}
-					chat.setLine(chat.getReader().readLine());
+					chat.getConnection().setLine(chat.getConnection().getReader().readLine());
 				}
 			}
 			catch (IOException ioe) {
